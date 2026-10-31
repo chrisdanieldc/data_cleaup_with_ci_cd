@@ -1,0 +1,20 @@
+rule_id: DQ-002
+
+rule_name: replace_nulls
+
+description: Replace null values in amount column with 0
+
+enabled: true
+
+source:
+  file: data/raw/orders.csv
+
+destination:
+  file: data/processed/orders.csv
+
+operation:
+  type: replace_nulls
+
+parameters:
+  column: amount
+  fill_value: 0

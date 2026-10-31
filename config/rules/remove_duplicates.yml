@@ -1,0 +1,20 @@
+rule_id: DQ-001
+
+rule_name: remove_duplicates
+
+description: Remove duplicate rows from the input dataset.
+
+enabled: true
+
+source:
+  file: data/raw/orders.csv
+
+destination:
+  file: data/processed/orders.csv
+
+operation:
+  type: drop_duplicates
+
+parameters:
+  subset: null
+  keep: first

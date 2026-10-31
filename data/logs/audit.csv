@@ -1,0 +1,3 @@
+rule_id,rule_name,run_id,timestamp,rows_before,rows_after,rows_changed,status
+DQ-002,replace_nulls,d6f697b9-a8a5-40f6-ae57-f5422194713e,2026-10-31T18:26:28.305631,20,20,0,SUCCESS
+DQ-001,remove_duplicates,d6f697b9-a8a5-40f6-ae57-f5422194713e,2026-10-31T18:26:28.313187,20,17,3,SUCCESS
