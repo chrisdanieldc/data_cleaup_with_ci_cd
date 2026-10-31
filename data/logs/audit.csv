@@ -1,3 +1,5 @@
 rule_id,rule_name,run_id,timestamp,rows_before,rows_after,rows_changed,status
 DQ-002,replace_nulls,d6f697b9-a8a5-40f6-ae57-f5422194713e,2026-10-31T18:26:28.305631,20,20,0,SUCCESS
 DQ-001,remove_duplicates,d6f697b9-a8a5-40f6-ae57-f5422194713e,2026-10-31T18:26:28.313187,20,17,3,SUCCESS
+DQ-002,replace_nulls,16cf407b-496f-4c5c-82c5-6d576fde70d4,2026-10-31T13:12:23.198026,20,20,0,SUCCESS
+DQ-001,remove_duplicates,16cf407b-496f-4c5c-82c5-6d576fde70d4,2026-10-31T13:12:23.214420,20,17,3,SUCCESS
