@@ -1,0 +1,123 @@
+name: Clean Data and Pytest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # Detect what changed
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      data: ${{ steps.filter.outputs.data }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            code:
+              - '**.py'
+              - 'engine/**'
+              - 'config/rules/**'
+              - 'requirements.txt'
+            data:
+              - 'data/raw/orders.csv'
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: changes
+    # Only run if code changed
+    if: needs.changes.outputs.code == 'true'
+
+    steps:
+      - name: Show test execution
+        run: |
+          echo "=== Running Tests ==="
+          echo "Code changed: ${{ needs.changes.outputs.code }}"
+          echo "This job runs BEFORE clean job (enforced by needs: keyword)"
+          echo "Clean job cannot start until this completes"
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest test_pipeline.py -v --tb=short
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ github.run_number }}
+          path: data/test/output/*.csv
+
+  clean:
+    name: Clean Data
+    runs-on: ubuntu-latest
+    needs: [changes, test]
+    # Run if:
+    # - Data changed (new orders.csv), OR
+    # - Code changed AND tests passed
+    # AND we're on main branch
+    if: |
+      always() &&
+      (needs.changes.outputs.data == 'true' || needs.changes.outputs.code == 'true') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped') &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Show execution context
+        run: |
+          echo "=== Execution Order Verification ==="
+          echo "Changes job result: ${{ needs.changes.result }}"
+          echo "Test job result: ${{ needs.test.result }}"
+          echo "Code changed: ${{ needs.changes.outputs.code }}"
+          echo "Data changed: ${{ needs.changes.outputs.data }}"
+          echo ""
+          echo "This job CANNOT run until changes and test jobs complete"
+          echo "This proves tests ran before cleaning (if code changed)"
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run data quality pipeline
+        run: python main.py
+
+      - name: Commit cleaned data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/processed/orders_*.csv data/logs/audit.csv
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-clean: processed data (run $(date +%Y%m%d_%H%M%S))"
+            git push
+          fi
+
+      - name: Upload cleaned data
+        uses: actions/upload-artifact@v4
+        with:
+          name: orders-clean-${{ github.run_number }}
+          path: data/processed/orders_*.csv
